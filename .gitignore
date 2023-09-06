@@ -1,0 +1,45 @@
+# Django
+*.py[cod]
+__pycache__/
+*.sqlite3
+
+# Python
+*.pyc
+*.pyo
+*.egg-info/
+*.pem
+
+# Virtual environment
+venv/
+*.virtualenv/
+*.venv/
+*.env
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*.swn
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Heroku
+*.env.local
+.env.staging
+.env.prod
+.DS_Store?
+.env*
+!.gitignore
+*~
+*swp
+db.sqlite3
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
