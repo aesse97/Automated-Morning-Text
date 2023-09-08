@@ -4,6 +4,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import random
+from datetime import datetime
 
 class Command(BaseCommand):
     help = 'Fetches weather and UV index and sends an SMS'
@@ -64,6 +65,39 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"An error occurred while fetching holiday: {e}"))
         return None
 
+    def fetch_florida_man_headline(self):
+        month = datetime.now().strftime('%B')
+        day = str(int(datetime.now().strftime('%d')))
+        today_date = f"{month.lower()}-{day}"  # Format date to match the website's URL scheme
+        url = f"https://floridamanbirthday.org/{today_date}"
+
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+
+                # Grab the first <p> tag from the page.
+                p_tag = soup.find("p")
+
+                if p_tag:
+                    # Collect all <strong> and <b> tags within the <p> tag.
+                    strong_and_b_tags = p_tag.find_all(['strong', 'b'])
+
+                    # Extract the text from each tag and join them together.
+                    headline = ' '.join(tag.get_text() for tag in strong_and_b_tags)
+
+                    if headline:
+                        return headline
+                    else:
+                        self.stdout.write(self.style.ERROR('Could not find a headline.'))
+                else:
+                    self.stdout.write(self.style.ERROR('Could not find a paragraph.'))
+            else:
+                self.stdout.write(self.style.ERROR('Failed to fetch the webpage.'))
+        except requests.RequestException as e:
+            self.stdout.write(self.style.ERROR(f"An error occurred while fetching headline: {e}"))
+        return None
+
     def send_sms(self, phone_number, body, meme_url):
         account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
         auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
@@ -115,19 +149,40 @@ class Command(BaseCommand):
             f"Hey {recipient_name}, why did the human get out of bed? To read my message, of course! 🐔",
             f"Good morning, {recipient_name}! May your day be more fruitful than a basket of puppies! 🐶",
             f"Hey {recipient_name}, up yet? Your couch said it misses you but told you to go be productive first! 🛋️",
+            f"Hey {recipient_name}, why did the chicken join a band? Because it had the drumsticks! Now, get up and rock your day! 🐔🥁",
+            f"Morning, {recipient_name}! The aliens just called, they’re missing their leader. Beam up and take charge! 👽",
+            f"Good morning, {recipient_name}! Ever tried to catch fog? Don't bother, I heard it's mist-ifying! 😂",
+            f"Hey {recipient_name}, heard you've been knighted! Arise, Sir Laze-a-lot! ⚔️",
+            f"Yo, {recipient_name}! Ever read a book on anti-gravity? It's impossible to put down, just like you! 📚",
+            f"Morning, {recipient_name}! Wanna hear a construction joke? Oh, never mind, I'm still building it. Get up and build your day! 🏗️",
+            f"Hey {recipient_name}, what did one wall say to the other? 'I'll meet you at the corner!' Time to turn your day around! 🏠",
+            f"Good morning, {recipient_name}! How does Moses make his coffee? Hebrews it! Time to part your Red Sea of blankets! 🌊",
+            f"Hey {recipient_name}, did you hear about the kidnapping at the playground? He woke up! Just like you need to! 😴",
+            f"Morning, {recipient_name}! Why did the scarecrow win an award? Because he was outstanding in his field, just like you'll be today! 🌾",
+            f"Hey {recipient_name}, what did one ocean say to the other? Nothing, they just waved. Time to make waves today! 🌊",
+            f"Morning, {recipient_name}! What did the janitor say when he jumped out of the closet? 'Supplies!' Time to supply your awesomeness to the world! 🎉",
+            f"Yo, {recipient_name}! What do you call fake spaghetti? An 'Impasta'! No faking today, rise and shine! 🍝",
+            f"Hey {recipient_name}, what did one plate say to another plate? 'Lunch is on me!' Your day's on you, make it great! 🍽️",
+            f"Good morning, {recipient_name}! Why did the golfer bring two pairs of pants? In case he got a hole in one. You got this one! ⛳"
         ]
 
         random_opener = random.choice(openers)
 
         day_temperature, min_temperature, max_temperature, summary = self.fetch_weather_and_uv(lat, lon)
+        florida_man_headline = self.fetch_florida_man_headline()
+        today_date_readable = datetime.now().strftime('%B %d, %Y')
 
         if all([day_temperature, min_temperature, max_temperature, summary]):
-            body = (f"{random_opener} \n"
+            body = (f"📆 Today is {today_date_readable}. \n"
+                    f"{random_opener} \n"
                     f"Here's your daily scoop:\n"
                     f"🌡️ The day's looking to be about {day_temperature}°F. Expect highs of {max_temperature}°F and lows around {min_temperature}°F.\n"
                     f"☀️ Weather's saying: {summary}.\n"
                     f"🎉 And guess what? It's {holiday} today! \n"
                     f"Make it a great one, {recipient_name}!")
+
+            if florida_man_headline:
+                body += f"\n📰 Florida Man Headline of the Day: {florida_man_headline}"
 
             self.send_sms(phone_number, body, meme_url)
             self.stdout.write(self.style.SUCCESS('Successfully sent.'))
