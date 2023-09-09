@@ -47,6 +47,15 @@ class Command(BaseCommand):
 
         return None
 
+    def fetch_meme_size(self, meme_url):
+        try:
+            response = requests.head(meme_url)
+            meme_size = int(response.headers.get('Content-Length', 0))  # Size in bytes
+            return meme_size
+        except requests.RequestException as e:
+            self.stdout.write(self.style.ERROR(f"An error occurred while fetching meme size: {e}"))
+            return 0
+
     def fetch_holiday(self):
         try:
             response = requests.get("https://www.holidaycalendar.io/what-holiday-is-today")
@@ -184,5 +193,20 @@ class Command(BaseCommand):
             if florida_man_headline:
                 body += f"\n📰 Florida Man Headline of the Day: {florida_man_headline}"
 
-            self.send_sms(phone_number, body, meme_url)
-            self.stdout.write(self.style.SUCCESS('Successfully sent.'))
+            meme_fits = False
+            while not meme_fits:
+                meme_url = self.fetch_meme_url()
+                if meme_url:
+                    meme_size = self.fetch_meme_size(meme_url)
+                    text_size = len(body.encode('utf-8'))
+                    total_size_mb = (meme_size + text_size) / (1024 * 1024)
+                    if total_size_mb < 5:
+                        meme_fits = True
+                else:
+                    break
+
+            if meme_fits:
+                self.send_sms(phone_number, body, meme_url)
+                self.stdout.write(self.style.SUCCESS('Successfully sent.'))
+            else:
+                self.stdout.write(self.style.ERROR('Unable to find a suitable meme that fits within the size limit.'))
