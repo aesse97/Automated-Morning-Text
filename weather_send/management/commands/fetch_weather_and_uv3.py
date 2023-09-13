@@ -33,6 +33,28 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"An error occurred while fetching data: {e}"))
             return None, None, None, None, None
 
+    def fetch_random_fun_fact_from_api(self):
+        limit = 1
+        api_url = 'https://api.api-ninjas.com/v1/facts?limit={}'.format(limit)
+        ninja_api_key = os.environ.get('NINJA_API_KEY')
+
+        if not ninja_api_key:
+            self.stdout.write(self.style.ERROR("NINJA_API_KEY not set in environment variables"))
+            return None
+
+        try:
+            response = requests.get(api_url, headers={'X-Api-Key': ninja_api_key})
+            if response.status_code == requests.codes.ok:
+                facts = response.json()
+                random_fact = random.choice(facts)
+                return random_fact.get('fact', 'No fact available.')
+            else:
+                self.stdout.write(self.style.ERROR(f"Error fetching fun facts: {response.status_code} {response.text}"))
+                return None
+        except requests.RequestException as e:
+            self.stdout.write(self.style.ERROR(f"An error occurred while fetching fun facts: {e}"))
+            return None
+
     def fetch_meme_url(self):
         meme_api_url = "https://meme-api.com/gimme"
 
@@ -77,7 +99,7 @@ class Command(BaseCommand):
     def fetch_florida_man_headline(self):
         month = datetime.now().strftime('%B')
         day = str(int(datetime.now().strftime('%d')))
-        today_date = f"{month.lower()}-{day}"  # Format date to match the website's URL scheme
+        today_date = f"{month.lower()}-{day}"
         url = f"https://floridamanbirthday.org/{today_date}"
 
         try:
@@ -85,14 +107,11 @@ class Command(BaseCommand):
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, 'html.parser')
 
-                # Grab the first <p> tag from the page.
                 p_tag = soup.find("p")
 
                 if p_tag:
-                    # Collect all <strong> and <b> tags within the <p> tag.
                     strong_and_b_tags = p_tag.find_all(['strong', 'b'])
 
-                    # Extract the text from each tag and join them together.
                     headline = ' '.join(tag.get_text() for tag in strong_and_b_tags)
 
                     if headline:
@@ -129,6 +148,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         meme_url = self.fetch_meme_url()
         holiday = self.fetch_holiday()
+        fun_fact = self.fetch_random_fun_fact_from_api()
 
         lat = os.environ.get('LAT2')
         lon = os.environ.get('LON2')
@@ -188,10 +208,9 @@ class Command(BaseCommand):
                     f"🌡️ The day's looking to be about {day_temperature}°F. Expect highs of {max_temperature}°F and lows around {min_temperature}°F.\n"
                     f"☀️ Weather's saying: {summary}.\n"
                     f"🎉 And guess what? It's {holiday} today! \n"
+                    f"🤓 Fun Fact of the Day: {fun_fact}.\n"
+                    f"📰 Florida Man Headline of the Day: {florida_man_headline}.\n"
                     f"Make it a great one, {recipient_name}!")
-
-            if florida_man_headline:
-                body += f"\n📰 Florida Man Headline of the Day: {florida_man_headline}"
 
             meme_fits = False
             while not meme_fits:
