@@ -96,34 +96,24 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"An error occurred while fetching holiday: {e}"))
         return None
 
-    def fetch_florida_man_headline(self):
-        month = datetime.now().strftime('%B')
-        day = str(int(datetime.now().strftime('%d')))
-        today_date = f"{month.lower()}-{day}"
-        url = f"https://floridamanbirthday.org/{today_date}"
+    def fetch_joke(self):
+        joke_api_url = "https://v2.jokeapi.dev/joke/Any"
+        joke_string = None
 
         try:
-            response = requests.get(url)
+            response = requests.get(joke_api_url)
             if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-
-                p_tag = soup.find("p")
-
-                if p_tag:
-                    strong_and_b_tags = p_tag.find_all(['strong', 'b'])
-
-                    headline = ' '.join(tag.get_text() for tag in strong_and_b_tags)
-
-                    if headline:
-                        return headline
-                    else:
-                        self.stdout.write(self.style.ERROR('Could not find a headline.'))
-                else:
-                    self.stdout.write(self.style.ERROR('Could not find a paragraph.'))
+                joke_data = response.json()
+                if joke_data['type'] == 'twopart':
+                    joke_string = f"{joke_data['setup']} ... {joke_data['delivery']}"
+                elif joke_data['type'] == 'single':
+                    joke_string = joke_data['joke']
+                return joke_string
             else:
-                self.stdout.write(self.style.ERROR('Failed to fetch the webpage.'))
+                self.stdout.write(self.style.ERROR('Failed to fetch the joke.'))
         except requests.RequestException as e:
-            self.stdout.write(self.style.ERROR(f"An error occurred while fetching headline: {e}"))
+            self.stdout.write(self.style.ERROR(f"An error occurred while fetching joke: {e}"))
+
         return None
 
     def send_sms(self, phone_number, body, meme_url):
@@ -150,10 +140,10 @@ class Command(BaseCommand):
         holiday = self.fetch_holiday()
         fun_fact = self.fetch_random_fun_fact_from_api()
 
-        lat = os.environ.get('LAT2')
-        lon = os.environ.get('LON2')
-        phone_number = os.environ.get('RECIPIENT_PHONE3')
-        recipient_name = os.environ.get('RECIPIENT_NAME3')
+        lat = os.environ.get('LAT1')
+        lon = os.environ.get('LON1')
+        phone_number = os.environ.get('RECIPIENT_PHONE1')
+        recipient_name = os.environ.get('RECIPIENT_NAME1')
 
         openers = [
             f"Rise and shine, {recipient_name}! The world isn't going to take over itself! 🌞",
@@ -198,7 +188,7 @@ class Command(BaseCommand):
         random_opener = random.choice(openers)
 
         day_temperature, min_temperature, max_temperature, summary = self.fetch_weather_and_uv(lat, lon)
-        florida_man_headline = self.fetch_florida_man_headline()
+        joke_string = self.fetch_joke()
         today_date_readable = datetime.now().strftime('%B %d, %Y')
 
         if all([day_temperature, min_temperature, max_temperature, summary]):
@@ -209,7 +199,7 @@ class Command(BaseCommand):
                     f"☀️ Weather's saying: {summary}.\n"
                     f"🎉 And guess what? It's {holiday} today! \n"
                     f"🤓 Fun Fact of the Day: {fun_fact}.\n"
-                    f"📰 Florida Man Headline of the Day: {florida_man_headline}.\n"
+                    f"😂 Joke of the Day: {joke_string}.\n"
                     f"Make it a great one, {recipient_name}!")
 
             meme_fits = False
