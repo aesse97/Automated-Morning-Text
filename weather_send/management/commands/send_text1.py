@@ -56,7 +56,8 @@ class Command(BaseCommand):
             return None
 
     def fetch_meme_url(self):
-        meme_api_url = "https://meme-api.com/gimme"
+        MEME_CATEGORY = os.environ.get('MEME_CATEGORY')
+        meme_api_url = f"https://meme-api.com/gimme/{MEME_CATEGORY}"
 
         try:
             response = requests.get(meme_api_url)
