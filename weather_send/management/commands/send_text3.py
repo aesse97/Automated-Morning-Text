@@ -56,19 +56,31 @@ class Command(BaseCommand):
             return None
 
     def fetch_meme_url(self):
-        MEME_CATEGORY = os.environ.get('MEME_CATEGORY')
-        meme_api_url = f"https://meme-api.com/gimme/{MEME_CATEGORY}"
+        MEMEDROID_URL = "https://www.memedroid.com/memes/top/day"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
 
         try:
-            response = requests.get(meme_api_url)
+            response = requests.get(MEMEDROID_URL, headers=headers)
             if response.status_code == 200:
-                meme_data = response.json()
-                if 'url' in meme_data:
-                    return meme_data['url']
+                soup = BeautifulSoup(response.content, 'html.parser')
+                meme_articles = soup.find_all("article", class_="gallery-item")
+                if not meme_articles:
+                    self.stdout.write(self.style.ERROR('No memes found.'))
+                    return None
+                random_meme = random.choice(meme_articles)
+                meme_img = random_meme.find("img", class_="img-responsive")
+                if meme_img:
+                    return meme_img["src"]
+            else:
+                self.stdout.write(
+                    self.style.ERROR(f"Failed to fetch Memedroid page. Status code: {response.status_code}"))
+                return None
         except requests.RequestException as e:
             self.stdout.write(self.style.ERROR(f"An error occurred while fetching meme: {e}"))
-
-        return None
+            return None
 
     def fetch_meme_size(self, meme_url):
         try:
