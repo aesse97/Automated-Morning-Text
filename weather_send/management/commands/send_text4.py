@@ -55,9 +55,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"An error occurred while fetching fun facts: {e}"))
             return None
 
-    def fetch_meme_url(self):
+    def fetch_meme_url(self, tried_urls=set()):
         MEMEDROID_URL = "https://www.memedroid.com/memes/top/day"
-
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
@@ -70,12 +69,13 @@ class Command(BaseCommand):
                 if not meme_articles:
                     self.stdout.write(self.style.ERROR('No memes found.'))
                     return None
-                for meme_article in meme_articles:
-                    meme_img = meme_article.find("img", class_="img-responsive")
-                    if meme_img and (meme_img["src"].endswith(".jpeg") or meme_img["src"].endswith(".jpg")):
+                random.shuffle(meme_articles)
+                for article in meme_articles:
+                    meme_img = article.find("img", class_="img-responsive")
+                    if meme_img and meme_img['src'] not in tried_urls:
                         print(f"Extracted meme URL: {meme_img['src']}")
+                        tried_urls.add(meme_img['src'])
                         return meme_img["src"]
-                return None
             else:
                 self.stdout.write(
                     self.style.ERROR(f"Failed to fetch Memedroid page. Status code: {response.status_code}"))
