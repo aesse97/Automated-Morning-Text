@@ -222,13 +222,13 @@ class Command(BaseCommand):
                     meme_size = self.fetch_meme_size(meme_url)
                     text_size = len(body.encode('utf-8'))
                     total_size_mb = (meme_size + text_size) / (1024 * 1024)
+                    print(f"Combined size (in MB) for URL {meme_url}: {total_size_mb}")
                     if total_size_mb < 5:
                         meme_fits = True
+                        self.send_sms(phone_number, body, meme_url)
+                        self.stdout.write(self.style.SUCCESS('Successfully sent.'))
+                        return
                 else:
                     break
 
-            if meme_fits:
-                self.send_sms(phone_number, body, meme_url)
-                self.stdout.write(self.style.SUCCESS('Successfully sent.'))
-            else:
-                self.stdout.write(self.style.ERROR('Unable to find a suitable meme that fits within the size limit.'))
+            self.stdout.write(self.style.ERROR('Unable to find a suitable meme that fits within the size limit.'))
