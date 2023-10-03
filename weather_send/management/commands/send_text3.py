@@ -70,10 +70,12 @@ class Command(BaseCommand):
                 if not meme_articles:
                     self.stdout.write(self.style.ERROR('No memes found.'))
                     return None
-                random_meme = random.choice(meme_articles)
-                meme_img = random_meme.find("img", class_="img-responsive")
-                if meme_img:
-                    return meme_img["src"]
+                for meme_article in meme_articles:
+                    meme_img = meme_article.find("img", class_="img-responsive")
+                    if meme_img and (meme_img["src"].endswith(".jpeg") or meme_img["src"].endswith(".jpg")):
+                        print(f"Extracted meme URL: {meme_img['src']}")
+                        return meme_img["src"]
+                return None
             else:
                 self.stdout.write(
                     self.style.ERROR(f"Failed to fetch Memedroid page. Status code: {response.status_code}"))
