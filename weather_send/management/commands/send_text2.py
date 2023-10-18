@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from twilio.rest import Client
 import os
 import requests
+from weather_send.views import send_pushover_notification
 
 class Command(BaseCommand):
     help = 'Fetches weather and UV index and sends an SMS'
@@ -48,6 +49,8 @@ class Command(BaseCommand):
                 from_=os.environ.get('TWILIO_PHONE'),
                 to=number
             )
+
+        send_pushover_notification(f"Daily update: {body}")
 
     def handle(self, *args, **kwargs):
         day_temperature, min_temperature, max_temperature, summary = self.fetch_weather_and_uv()

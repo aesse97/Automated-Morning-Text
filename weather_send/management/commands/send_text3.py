@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import random
 from datetime import datetime
+from weather_send.views import send_pushover_notification
 
 class Command(BaseCommand):
     help = 'Fetches weather and UV index and sends an SMS'
@@ -216,6 +217,8 @@ class Command(BaseCommand):
                     f"🤓 Fun Fact of the Day: {fun_fact}.\n"
                     f"😂 Joke of the Day: {joke_string}.\n"
                     f"Make it a great one, {recipient_name}!")
+
+            send_pushover_notification(f"Daily Update for {recipient_name}: {body}")
 
             meme_fits = False
             while not meme_fits:
