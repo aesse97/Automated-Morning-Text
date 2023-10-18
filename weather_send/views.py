@@ -24,7 +24,7 @@ def sms_reply(request):
 
 def generate_ai_response(prompt):
     messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "system", "content": "You are a funny helpful assistant."},
         {"role": "user", "content": prompt}
     ]
 
